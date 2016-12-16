@@ -166,6 +166,7 @@ view { graphs, excludedPackages, selectedModule } =
                 | viewLabel = viewLabel << isExcludedPackage <<* lookup "" packageLabels
                 , colorNode = nodeColor << isExcludedPackage
                 , colorEdge = edgeColor << (mapTuple isExcludedPackage)
+                , labelMaxWidth = 200
               }
             )
 
@@ -193,8 +194,7 @@ view { graphs, excludedPackages, selectedModule } =
   in
     Html.div
       [ Html.Attributes.style
-          [ ("margin", "40px")
-          , ("font-family", "Helvetica, Arial, san-serif")
+          [ ("font-family", "Helvetica, Arial, san-serif")
           ]
       ]
       [ Html.div
