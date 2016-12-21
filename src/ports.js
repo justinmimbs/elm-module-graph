@@ -1,5 +1,3 @@
-var ports = (function () {
-
 function requestFileInputData(id, callback) {
   var input = document.getElementById(id);
   if (input === null || input.type !== 'file') {
@@ -42,12 +40,10 @@ function requestFileInputData(id, callback) {
   }
 }
 
-return {
+module.exports = {
   init: function (app) {
     app.ports.requestFileInputData.subscribe(function (id) {
       requestFileInputData(id, app.ports.fileInputData.send);
     });
   }
 };
-
-})();
