@@ -6,8 +6,8 @@ module ModuleGraph exposing
   )
 
 import AcyclicDigraph exposing (Node, Edge, AcyclicDigraph)
-import Diagram
-import DiagramConnectivity
+import ArcDiagram
+import ArcDiagram.Connectivity
 import Dict exposing (Dict)
 import Html exposing (Html)
 import Html.Attributes
@@ -51,7 +51,8 @@ type alias Graphs =
 init : Input -> Model
 init input =
   let
-    graphs = graphsFromInput input
+    graphs =
+      graphsFromInput input
   in
     Model
       graphs
@@ -76,7 +77,8 @@ graphsFromInput input =
         |> Dict.foldl
             (\moduleName (imports, packageName) (edges, labels) ->
               let
-                moduleId = moduleIdFromName moduleName
+                moduleId =
+                  moduleIdFromName moduleName
               in
                 ( Set.union
                     (imports |> Set.map ((flip (,)) moduleId << moduleIdFromName))
@@ -143,15 +145,33 @@ update msg model =
 
 -- view
 
-defaultOptions = Diagram.defaultOptions
-defaultOptionsConnectivity = DiagramConnectivity.defaultOptions
+defaultLayout : ArcDiagram.Layout
+defaultLayout =
+  ArcDiagram.defaultLayout
+
+
+packagesLayout : ArcDiagram.Layout
+packagesLayout =
+  { defaultLayout
+    | labelMaxWidth = 200
+  }
+
+
+modulesLayout : ArcDiagram.Layout
+modulesLayout =
+  { defaultLayout
+    | labelMaxWidth = 300
+  }
 
 
 view : Model -> Html Msg
 view { graphs, excludedPackages, selectedModule } =
   let
-    (packageEdges, packageLabels) = graphs.packages
-    (moduleEdges, moduleLabels) = graphs.modules
+    (packageEdges, packageLabels) =
+      graphs.packages
+
+    (moduleEdges, moduleLabels) =
+      graphs.modules
 
     isExcludedPackage =
       (flip Set.member) excludedPackages
@@ -161,16 +181,16 @@ view { graphs, excludedPackages, selectedModule } =
         |> AcyclicDigraph.fromEdges
         |> unpack
             (always <| Html.text "Graph contains cycles")
-            (Diagram.viewWithOptions
-              { defaultOptions
-                | viewLabel = viewLabel << isExcludedPackage <<* lookup "" packageLabels
-                , colorNode = nodeColor << isExcludedPackage
-                , colorEdge = edgeColor << (mapTuple isExcludedPackage)
-                , labelMaxWidth = 200
+            (ArcDiagram.view
+              packagesLayout
+              { viewLabel = viewLabel << isExcludedPackage <<* lookup "" packageLabels
+              , colorNode = nodeColor << isExcludedPackage
+              , colorEdge = edgeColor << (mapTuple isExcludedPackage)
               }
             )
 
-    excludedPackageNames = Set.map (lookup "" packageLabels) excludedPackages
+    excludedPackageNames =
+      Set.map (lookup "" packageLabels) excludedPackages
 
     includedModuleIds =
       Dict.foldl
@@ -189,7 +209,7 @@ view { graphs, excludedPackages, selectedModule } =
         |> AcyclicDigraph.fromEdges
         |> unpack
             (always <| Html.text "Graph contains cycles")
-            (viewDiagram moduleLabels selectedModule)
+            (viewModulesDiagram moduleLabels selectedModule)
 
   in
     Html.div
@@ -223,24 +243,42 @@ viewHeader string =
     ]
 
 
-viewDiagram : Dict Node (String, String) -> Maybe Node -> AcyclicDigraph -> Html Node
-viewDiagram moduleLabels selectedNode graph =
+defaultPaint : ArcDiagram.Paint
+defaultPaint =
+  ArcDiagram.defaultPaint
+
+
+defaultPaintConnectivity =
+  ArcDiagram.Connectivity.defaultPaint
+
+
+viewModulesDiagram : Dict Node (String, String) -> Maybe Node -> AcyclicDigraph -> Html Node
+viewModulesDiagram moduleLabels selectedNode graph =
   let
     moduleLabelFromNode : Node -> (String, String)
     moduleLabelFromNode =
       lookup ("<module name>", "<package name>") moduleLabels
-  in
-    case selectedNode of
-      Just node ->
-        DiagramConnectivity.viewWithOptions
-          { defaultOptionsConnectivity | viewLabel = \d n -> viewLabel2 (isNothing d) (moduleLabelFromNode n) }
-          node
-          graph
 
-      Nothing ->
-        Diagram.viewWithOptions
-          { defaultOptions | viewLabel = viewLabel2 False << moduleLabelFromNode }
-          graph
+    paint : ArcDiagram.Paint
+    paint =
+      case selectedNode of
+        Just node ->
+          ArcDiagram.Connectivity.paint
+            { defaultPaintConnectivity
+              | viewLabel = \n d -> viewLabel2 (isNothing d) (moduleLabelFromNode n)
+            }
+            graph
+            node
+
+        Nothing ->
+          { defaultPaint
+            | viewLabel = moduleLabelFromNode >> (viewLabel2 False)
+          }
+  in
+    ArcDiagram.view
+      modulesLayout
+      paint
+      graph
 
 
 induceSubgraph : Set Node -> Set Edge -> Set Edge

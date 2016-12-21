@@ -1,3 +1,5 @@
+module Main exposing (main)
+
 import Dict
 import Html exposing (Html)
 import Html.Attributes

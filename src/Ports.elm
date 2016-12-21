@@ -1,4 +1,7 @@
-port module Ports exposing (File, toFile, requestFileInputData, fileInputData)
+port module Ports exposing
+  ( File, toFile
+  , requestFileInputData, fileInputData
+  )
 
 
 type alias File =
@@ -14,7 +17,8 @@ type alias FileJson =
   }
 
 
-type alias Id = String
+type alias Id =
+  String
 
 
 toFile : FileJson -> File
