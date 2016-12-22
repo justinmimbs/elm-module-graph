@@ -4,7 +4,7 @@
   "description": "",
   "repository": {
     "type": "git",
-    "url": "https://github.com/user/project.git"
+    "url": "https://github.com/justinmimbs/elm-module-graph.git"
   },
   "devDependencies": {
     "elm-webpack-loader": "4.x.x",
