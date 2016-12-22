@@ -1,5 +1,5 @@
 port module Ports exposing
-  ( File, toFile
+  ( FileJson, File, toFile
   , requestFileInputData, fileInputData
   )
 

@@ -5,7 +5,7 @@ module ModuleGraph exposing
   , view
   )
 
-import AcyclicDigraph exposing (Node, Edge, AcyclicDigraph)
+import AcyclicDigraph exposing (Node, Edge, Cycle, AcyclicDigraph)
 import ArcDiagram
 import ArcDiagram.Connectivity
 import Dict exposing (Dict)
@@ -153,25 +153,30 @@ defaultLayout =
 packagesLayout : ArcDiagram.Layout
 packagesLayout =
   { defaultLayout
-    | labelMaxWidth = 200
+    | labelMaxWidth = 240
+    , nodePadding = 2
+    , yMinSpacing = 18
   }
 
 
 modulesLayout : ArcDiagram.Layout
 modulesLayout =
-  { defaultLayout
-    | labelMaxWidth = 300
+  { packagesLayout
+    | labelMaxWidth = 360
   }
 
 
 view : Model -> Html Msg
 view { graphs, excludedPackages, selectedModule } =
   let
-    (packageEdges, packageLabels) =
-      graphs.packages
+    (packageEdges, packageLabels) = graphs.packages
+    (moduleEdges, moduleLabels) = graphs.modules
 
-    (moduleEdges, moduleLabels) =
-      graphs.modules
+    packageNameFromId =
+      lookup "<package>" packageLabels
+
+    moduleLabelFromId =
+      lookup ("<module>", "<package>") moduleLabels
 
     isExcludedPackage =
       (flip Set.member) excludedPackages
@@ -180,17 +185,17 @@ view { graphs, excludedPackages, selectedModule } =
       packageEdges
         |> AcyclicDigraph.fromEdges
         |> unpack
-            (always <| Html.text "Graph contains cycles")
+            (viewCycles packageNameFromId)
             (ArcDiagram.view
               packagesLayout
-              { viewLabel = viewLabel << isExcludedPackage <<* lookup "" packageLabels
+              { viewLabel = viewLabel << isExcludedPackage <<* packageNameFromId
               , colorNode = nodeColor << isExcludedPackage
               , colorEdge = edgeColor << (mapTuple isExcludedPackage)
               }
             )
 
     excludedPackageNames =
-      Set.map (lookup "" packageLabels) excludedPackages
+      Set.map packageNameFromId excludedPackages
 
     includedModuleIds =
       Dict.foldl
@@ -208,38 +213,65 @@ view { graphs, excludedPackages, selectedModule } =
         |> induceSubgraph includedModuleIds
         |> AcyclicDigraph.fromEdges
         |> unpack
-            (always <| Html.text "Graph contains cycles")
-            (viewModulesDiagram moduleLabels selectedModule)
-
+            (viewCycles (moduleLabelFromId >> Tuple.first))
+            (viewModulesDiagram moduleLabelFromId selectedModule)
   in
     Html.div
       [ Html.Attributes.style
           [ ("font-family", "Helvetica, Arial, san-serif")
           ]
       ]
-      [ Html.div
-          []
-          [ viewHeader "Packages"
+      [ viewSection
+          [ viewHeader "Packages" (Dict.size packageLabels)
           , packageView |> Html.map TogglePackage
           ]
-      , Html.div
-          []
-          [ viewHeader "Modules"
+      , viewSection
+          [ viewHeader "Modules" (Set.size includedModuleIds)
           , moduleView |> Html.map ToggleModule
           ]
       ]
 
 
-viewHeader : String -> Html a
-viewHeader string =
+viewSection : List (Html a) -> Html a
+viewSection =
+  Html.div
+    [ Html.Attributes.style
+        [ ("margin", "20px 0 40px")
+        ]
+    ]
+
+
+viewCycles : (Node -> String) -> List Cycle -> Html a
+viewCycles toLabel cycles =
+  Html.div
+    []
+    [ Html.text "Graph has the following cycles:"
+    , Html.ol
+        [ Html.Attributes.style
+            [ ("font-family", labelFontFamily)
+            ]
+        ]
+        (cycles |> List.map (viewCycle toLabel))
+    ]
+
+
+viewCycle : (Node -> String) -> Cycle -> Html a
+viewCycle toLabel cycle =
+  Html.li
+    []
+    [ Html.text (cycle |> List.map toLabel |> String.join " -> ") ]
+
+
+viewHeader : String -> Int -> Html a
+viewHeader title n =
   Html.h2
     [ Html.Attributes.style
-        [ ("margin", "20px 0")
+        [ ("margin", "0 0 20px")
         , ("font-size", "20px")
         , ("font-weight", "normal")
         ]
     ]
-    [ Html.text string
+    [ Html.text <| title ++ " (" ++ toString n ++ ")"
     ]
 
 
@@ -252,13 +284,9 @@ defaultPaintConnectivity =
   ArcDiagram.Connectivity.defaultPaint
 
 
-viewModulesDiagram : Dict Node (String, String) -> Maybe Node -> AcyclicDigraph -> Html Node
-viewModulesDiagram moduleLabels selectedNode graph =
+viewModulesDiagram : (Node -> (String, String)) -> Maybe Node -> AcyclicDigraph -> Html Node
+viewModulesDiagram moduleLabelFromNode selectedNode graph =
   let
-    moduleLabelFromNode : Node -> (String, String)
-    moduleLabelFromNode =
-      lookup ("<module name>", "<package name>") moduleLabels
-
     paint : ArcDiagram.Paint
     paint =
       case selectedNode of
@@ -305,11 +333,16 @@ nodeColor isDimmed =
     "black"
 
 
+labelFontFamily : String
+labelFontFamily =
+  "Menlo, Monaco, Consolas, monospace"
+
+
 labelAttributes : List (Svg.Attribute a)
 labelAttributes =
   [ Svg.Attributes.x "4px"
-  , Svg.Attributes.fontFamily "Helvetica, Arial"
-  , Svg.Attributes.fontSize "12px"
+  , Svg.Attributes.fontFamily labelFontFamily
+  , Svg.Attributes.fontSize "11px"
   , Svg.Attributes.dominantBaseline "middle"
   ]
 

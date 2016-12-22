@@ -108,8 +108,24 @@ view state =
             ModuleGraph.view moduleGraph |> Html.map ModuleGraphMsg
 
           SelectedFile (Err error) ->
-            Html.div [] [ Html.text error ]
+            viewSection
+              [ Html.text error
+              ]
 
-          _ ->
-            Html.text ""
+          NoFile _ ->
+            viewSection
+              [ Html.text "To explore package and module dependencies for an Elm project, generate a "
+              , Html.a [ Html.Attributes.href "https://github.com/justinmimbs/elm-module-graph" ] [ Html.text "module-graph.json" ]
+              , Html.text " file, and provide it above."
+              ]
       ]
+
+
+viewSection : List (Html a) -> Html a
+viewSection =
+  Html.div
+    [ Html.Attributes.style
+        [ ("width", "360px")
+        , ("margin-top", "20px")
+        ]
+    ]
