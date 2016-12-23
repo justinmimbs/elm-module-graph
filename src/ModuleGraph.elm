@@ -7,7 +7,7 @@ module ModuleGraph exposing
 
 import AcyclicDigraph exposing (Node, Edge, Cycle, AcyclicDigraph)
 import ArcDiagram
-import ArcDiagram.Connectivity
+import ArcDiagram.Distance
 import Dict exposing (Dict)
 import Html exposing (Html)
 import Html.Attributes
@@ -153,16 +153,16 @@ defaultLayout =
 packagesLayout : ArcDiagram.Layout
 packagesLayout =
   { defaultLayout
-    | labelMaxWidth = 240
-    , nodePadding = 2
-    , yMinSpacing = 18
+    | nodePadding = 2
+    , labelWidth = 240
+    , labelMinHeight = 18
   }
 
 
 modulesLayout : ArcDiagram.Layout
 modulesLayout =
   { packagesLayout
-    | labelMaxWidth = 360
+    | labelWidth = 360
   }
 
 
@@ -280,8 +280,8 @@ defaultPaint =
   ArcDiagram.defaultPaint
 
 
-defaultPaintConnectivity =
-  ArcDiagram.Connectivity.defaultPaint
+defaultDistancePaint =
+  ArcDiagram.Distance.defaultDistancePaint
 
 
 viewModulesDiagram : (Node -> (String, String)) -> Maybe Node -> AcyclicDigraph -> Html Node
@@ -291,16 +291,16 @@ viewModulesDiagram moduleLabelFromNode selectedNode graph =
     paint =
       case selectedNode of
         Just node ->
-          ArcDiagram.Connectivity.paint
-            { defaultPaintConnectivity
-              | viewLabel = \n d -> viewLabel2 (isNothing d) (moduleLabelFromNode n)
+          ArcDiagram.Distance.paint
+            { defaultDistancePaint
+              | viewLabel = \n d -> viewLabelPair (isNothing d) (moduleLabelFromNode n)
             }
             graph
             node
 
         Nothing ->
           { defaultPaint
-            | viewLabel = moduleLabelFromNode >> (viewLabel2 False)
+            | viewLabel = moduleLabelFromNode >> (viewLabelPair False)
           }
   in
     ArcDiagram.view
@@ -364,8 +364,8 @@ viewLabel isDimmed label =
     ]
 
 
-viewLabel2 : Bool -> (String, String) -> Svg a
-viewLabel2 isDimmed (label, sublabel) =
+viewLabelPair : Bool -> (String, String) -> Svg a
+viewLabelPair isDimmed (label, sublabel) =
   Svg.text_
     labelAttributes
     [ labelText isDimmed label
