@@ -3,9 +3,14 @@
 Visually explore package and module dependencies for an Elm project.
 
 
-## Example
+## Examples
 
-Explore dependency graphs for the Elm project at [knewter/time-tracker](https://github.com/knewter/time-tracker) in this [example](https://justinmimbs.github.io/elm-module-graph/example/).
+Explore dependency graphs for these Elm projects:
+
+- [graph](https://justinmimbs.github.io/elm-module-graph/examples/ellie.html) - [lukewestby/ellie](https://github.com/lukewestby/ellie)
+- [graph](https://justinmimbs.github.io/elm-module-graph/examples/elm-spa-example.html) - [rtfeldman/elm-spa-example](https://github.com/rtfeldman/elm-spa-example)
+- [graph](https://justinmimbs.github.io/elm-module-graph/examples/time-tracker.html) - [knewter/time-tracker](https://github.com/knewter/time-tracker)
+- [graph](https://justinmimbs.github.io/elm-module-graph/examples/tradenomiitti.html) - [Tradenomiliitto/tradenomiitti](https://github.com/Tradenomiliitto/tradenomiitti)
 
 
 ## Usage
