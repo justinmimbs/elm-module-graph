@@ -4,7 +4,7 @@ function requestFileInputData(id, callback) {
     return;
   }
 
-  var maxFileSize = 64 * 1024;
+  var maxFileSize = 256 * 1024;
   var file = input.files[0];
 
   if (file === undefined) {
