@@ -83,7 +83,7 @@ graphsFromInput input =
                                 edges
                             , Dict.insert
                                 moduleId
-                                ( moduleName, packageName )
+                                ( secondWord moduleName |> Maybe.withDefault moduleName, packageName )
                                 labels
                             )
                     )
@@ -114,6 +114,11 @@ graphsFromInput input =
             , invertDict packageIdFromName
             )
             ( moduleEdges, moduleLabels )
+
+
+secondWord : String -> Maybe String
+secondWord =
+    String.words >> List.drop 1 >> List.head
 
 
 initExcludedPackages : Dict Node String -> Set Node
